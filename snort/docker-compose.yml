@@ -1,0 +1,9 @@
+---
+version: '3.7'
+services:
+  snort:
+    image: snort
+    build: ./
+    network_mode: host
+    volumes:
+      - ./confs/snort.lua:/usr/local/etc/snort/snort.lua
