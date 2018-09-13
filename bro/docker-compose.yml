@@ -1,0 +1,12 @@
+---
+version: '3.7'
+services:
+  bro:
+    container_name: docker-bro
+    build: .
+    image: bro:2.5
+    network_mode: host
+    volumes:
+      - ./logs:/opt/bro/spool/bro
+    environment:
+      - "BRO_INT=wlp3s0"

@@ -1,7 +1,6 @@
-# This is a docker container to install Snort++ (also known as Snort 3.0)
-# Use the appropriate docker-compose file to launch this container.
+#Dockerfile to install Bro
 
-FROM debian:latest
+FROM debian:stretch
 
 #Install some Dependencies
 RUN apt update -qq
@@ -23,35 +22,32 @@ RUN apt install -y \
   libgeoip-dev \
   wget \
   net-tools \
-  gzip
+  gzip \
+  supervisor
 
 # Make Directory to work out of
 RUN mkdir /tmp/bro_tmp
-
-# Setup GeoIP IPv4
-WORKDIR /tmp/bro_tmp
-RUN wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz \
-  && gzip -d GeoLiteCity.dat.gz \
-  && mv GeoLiteCity.dat /usr/share/GeoIP/GeoIPCity.dat
- 
-# Setup GeoIP IPv6
-WORKDIR /tmp/bro_tmp
-RUN wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCityv6-beta/GeoLiteCityv6.dat.gz \
-  && gzip -d GeoLiteCityv6.dat.gz \
-  && mv GeoLiteCityv6.dat /usr/share/GeoIP/GeoIPCityv6.at
 
 # Install BRO
 WORKDIR /tmp/bro_tmp
 RUN git clone --recursive git://git.bro.org/bro
 WORKDIR /tmp/bro_tmp/bro
-RUN ./configure --prefix=/opt/bro --with-geoip=/usr/share/GeoIP/  \
+RUN ./configure --prefix=/opt/bro \
   && make -j 8 \
   && make install -j 8
 
 # Configure some ENV
 ENV PATH $PATH:/opt/bro/bin:$PATH
 
-# Run Bro
-RUN broctl deploy
+#Cleanup 
+RUN apt clean && apt autoremove -y
+RUN rm -rf /tmp/bro_tmp
+
+#Add files
+COPY bro.conf /etc/supervisor/supervisord.conf
+COPY configs/local.bro /opt/bro/share/bro/site/local.bro
+COPY configs/node.cfg /opt/bro/etc/node.cfg
+
+#Run Bro, Bro
 WORKDIR /opt/bro
-ENTRYPOINT ["/bin/sh"]
+ENTRYPOINT ["supervisord"]
